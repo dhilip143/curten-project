@@ -1,73 +1,121 @@
-# Welcome to your Lovable project
+# Lovable - Blinds & Curtains Visualizer
 
-## Project info
+**See your blinds in your home before buying** with advanced perspective mapping technology.
 
-**URL**: https://lovable.dev/projects/510811c6-d159-408c-842a-706593366e48
+## 🏠 What is Lovable?
 
-## How can I edit this code?
+Lovable is a sophisticated web application that lets users:
+- Take or upload photos of their windows
+- Mark window coordinates with draggable corner points
+- Apply realistic blind and curtain designs with perspective mapping
+- Fine-tune opacity, scale, positioning, and open/closed states  
+- Save, share, and download their visualizations
+- Request quotes directly from dealers
 
-There are several ways of editing your application.
+## ✨ Features
 
-**Use Lovable**
+### Core Functionality
+- **Photo Capture**: Camera integration + file upload with drag & drop
+- **Window Mapping**: Interactive 4-corner coordinate selection with auto-detect
+- **Product Catalog**: Browse roller blinds, venetian blinds, curtains, and shutters
+- **Perspective Preview**: Real-time WebGL-based texture mapping with homography
+- **Fine Controls**: Opacity, scale, vertical offset, rotation, open/closed states
+- **Save & Share**: Generate shareable links and download high-quality images
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/510811c6-d159-408c-842a-706593366e48) and start prompting.
+### Technical Features  
+- **Responsive Design**: Mobile-first UI with touch-friendly controls
+- **Progressive Enhancement**: Graceful fallback if WebGL unavailable
+- **Keyboard Accessibility**: Arrow key nudging for precise coordinate adjustment
+- **Memory Efficient**: Optimized for mobile devices with smart image scaling
 
-Changes made via Lovable will be committed automatically to this repo.
+## 🚀 User Flow
 
-**Use your preferred IDE**
+1. **Landing** → Choose to get started
+2. **Photo Step** → Take photo (camera) or upload image (file/drag-drop)
+3. **Window Coords** → Drag 4 corner handles to mark window boundaries  
+4. **Product Selection** → Browse catalog and apply products to see instant preview
+5. **Preview & Edit** → Fine-tune with opacity, scale, positioning controls
+6. **Save & Share** → Generate shareable links, download images, request quotes
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## 🎨 Design System
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+The app uses a sophisticated design system with:
+- **Warm Color Palette**: Premium browns, creams, and sophisticated teals
+- **Semantic Tokens**: All colors defined in design system (no hardcoded values)
+- **Glass Morphism**: Modern backdrop blur effects and elegant shadows  
+- **Smooth Animations**: Spring transitions and interactive hover states
+- **Typography**: Inter font family for clean, professional appearance
 
-Follow these steps:
+## 🛠 Tech Stack
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+- **Frontend**: React 18 + TypeScript + Vite
+- **Styling**: Tailwind CSS with custom design system
+- **UI Components**: shadcn/ui with custom variants
+- **State Management**: React Context + useReducer
+- **Canvas Rendering**: HTML5 Canvas with WebGL perspective mapping
+- **Routing**: React Router for single-page navigation
+- **Icons**: Lucide React for consistent iconography
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+## 📁 Key Components
 
-# Step 3: Install the necessary dependencies.
-npm i
+- `Layout` - Header, navigation, and responsive container
+- `PhotoCapture` - Camera integration and file upload UI  
+- `WindowSelector` - Interactive coordinate selection with draggable handles
+- `CatalogBrowser` - Product grid with categories and filtering
+- `PreviewCanvas` - Perspective mapping and texture rendering engine
+- `ControlsPanel` - Real-time adjustment sliders and toggles
+- `SceneManager` - Save, share, download, and quote request functionality
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+## 🎯 Browser Support
+
+- **Desktop**: Chrome 90+, Firefox 88+, Safari 14+, Edge 90+
+- **Mobile**: Chrome/Safari on iOS 14+, Chrome on Android 10+
+- **Camera**: Requires HTTPS for camera access (automatically handled)
+- **WebGL**: Graceful fallback to 2D canvas if WebGL unavailable
+
+## 🔧 Development
+
+```bash
+# Install dependencies
+npm install
+
+# Start development server  
 npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
 ```
 
-**Edit a file directly in GitHub**
+## 📱 Mobile Considerations
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+- **Camera-first UI** on mobile devices
+- **Touch-optimized** dragging and controls
+- **Fluid FABs** and collapsible panels
+- **Memory management** with image downscaling
+- **Offline fallbacks** for poor connections
 
-**Use GitHub Codespaces**
+## 🎨 Customization
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+The design system is fully customizable via:
+- `src/index.css` - Color tokens, gradients, shadows
+- `tailwind.config.ts` - Extended theme configuration  
+- Component variants can be extended for client branding
 
-## What technologies are used for this project?
+## 🚀 Deployment
 
-This project is built with:
+Ready for deployment to:
+- Vercel (recommended)
+- Netlify
+- AWS S3 + CloudFront
+- Any static hosting provider
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## 📄 License
 
-## How can I deploy this project?
+Built with Lovable - The AI-powered web app builder.
 
-Simply open [Lovable](https://lovable.dev/projects/510811c6-d159-408c-842a-706593366e48) and click on Share -> Publish.
+---
 
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+**Ready to visualize your perfect window treatments?** [Get Started →](https://your-domain.com)

@@ -1,42 +1,59 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* Lovable Design System - Premium Blinds & Curtains Visualizer */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Brand Colors - Warm, elegant palette for home interiors */
+    --background: 30 10% 98%;
+    --foreground: 20 20% 12%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 20 20% 12%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 20 20% 12%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Primary - Rich warm brown for premium feel */
+    --primary: 25 50% 25%;
+    --primary-foreground: 30 10% 98%;
+    --primary-hover: 25 55% 20%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Secondary - Warm cream for elegance */
+    --secondary: 40 20% 92%;
+    --secondary-foreground: 20 20% 12%;
+    --secondary-hover: 40 25% 88%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* Accent - Sophisticated teal for interactive elements */
+    --accent: 180 40% 45%;
+    --accent-foreground: 0 0% 100%;
+    --accent-hover: 180 45% 40%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --muted: 40 15% 94%;
+    --muted-foreground: 20 10% 45%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 70% 55%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 40 15% 88%;
+    --input: 40 15% 90%;
+    --ring: 25 50% 25%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
+
+    /* Custom Design Tokens */
+    --warm-gradient: linear-gradient(135deg, hsl(30 25% 85%), hsl(25 30% 92%));
+    --accent-gradient: linear-gradient(135deg, hsl(180 40% 45%), hsl(185 45% 50%));
+    --premium-shadow: 0 8px 32px -8px hsl(25 50% 25% / 0.2);
+    --soft-shadow: 0 4px 16px -4px hsl(20 20% 12% / 0.1);
+    --glow-shadow: 0 0 32px hsl(180 40% 45% / 0.3);
+    
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-spring: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 
     --sidebar-background: 0 0% 98%;
 
@@ -100,6 +117,67 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
+  }
+
+  html {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+}
+
+@layer components {
+  /* Premium button variants */
+  .btn-premium {
+    @apply bg-gradient-to-r from-primary to-primary-hover text-primary-foreground 
+           shadow-lg hover:shadow-xl transition-all duration-300 
+           hover:scale-105 active:scale-95;
+  }
+  
+  .btn-accent {
+    @apply bg-gradient-to-r from-accent to-accent-hover text-accent-foreground 
+           shadow-lg hover:shadow-xl transition-all duration-300;
+  }
+  
+  .btn-ghost {
+    @apply bg-transparent border-2 border-border hover:bg-secondary 
+           transition-all duration-300 hover:border-accent;
+  }
+
+  /* Card styles */
+  .card-premium {
+    @apply bg-card border border-border rounded-xl shadow-soft-shadow 
+           hover:shadow-premium-shadow transition-all duration-300;
+  }
+  
+  .card-glow {
+    @apply bg-card border border-accent/20 rounded-xl shadow-glow-shadow 
+           backdrop-blur-sm;
+  }
+
+  /* Glass morphism effects */
+  .glass {
+    @apply bg-white/80 backdrop-blur-sm border border-white/20 shadow-soft-shadow;
+  }
+  
+  .glass-dark {
+    @apply bg-primary/10 backdrop-blur-sm border border-primary/20;
+  }
+
+  /* Interactive elements */
+  .interactive {
+    @apply transition-all duration-300 hover:scale-102 active:scale-98 
+           cursor-pointer select-none;
+  }
+  
+  .draggable-handle {
+    @apply w-4 h-4 bg-accent border-2 border-white rounded-full 
+           shadow-lg cursor-grab active:cursor-grabbing 
+           hover:scale-125 transition-transform duration-200
+           relative z-10;
+  }
+  
+  .window-overlay {
+    @apply absolute inset-0 border-2 border-accent border-dashed 
+           bg-accent/10 backdrop-blur-sm rounded-lg;
   }
 }
