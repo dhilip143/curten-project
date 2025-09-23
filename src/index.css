@@ -180,4 +180,21 @@
     @apply absolute inset-0 border-2 border-accent border-dashed 
            bg-accent/10 backdrop-blur-sm rounded-lg;
   }
+
+  /* Mobile optimizations */
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  /* Ensure proper touch targets on mobile */
+  @media (max-width: 768px) {
+    .draggable-handle {
+      @apply w-6 h-6 border-4;
+    }
+    
+    /* Larger touch targets for mobile */
+    button[data-mobile="true"] {
+      @apply min-h-12 min-w-12;
+    }
+  }
 }
