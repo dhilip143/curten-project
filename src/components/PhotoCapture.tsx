@@ -140,11 +140,11 @@ export function PhotoCapture() {
           </div>
 
           <Card className="card-premium p-6">
-            <div className="aspect-video bg-muted rounded-lg overflow-hidden mb-6">
+            <div className="bg-muted rounded-lg overflow-auto mb-6 flex justify-center items-center min-h-[300px]">
               <img
                 src={state.photo.url}
                 alt="Uploaded photo"
-                className="w-full h-full object-contain"
+                className="max-w-full max-h-full object-contain"
               />
             </div>
             
@@ -186,11 +186,11 @@ export function PhotoCapture() {
         {capturedPhoto ? (
           // Photo Review
           <Card className="card-premium p-6">
-            <div className="aspect-video bg-muted rounded-lg overflow-hidden mb-6">
+            <div className="bg-muted rounded-lg overflow-auto mb-6 flex justify-center items-center min-h-[300px]">
               <img
                 src={capturedPhoto}
                 alt="Captured photo"
-                className="w-full h-full object-contain"
+                className="max-w-full max-h-full object-contain"
               />
             </div>
             

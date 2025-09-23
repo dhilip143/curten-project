@@ -108,7 +108,7 @@ export function PreviewAndEdit() {
           <div className={`grid gap-6 ${isMobile ? 'grid-cols-1' : 'lg:grid-cols-3'}`}>
             {/* Main Preview Area */}
             <div className={`space-y-4 ${isMobile ? '' : 'lg:col-span-2'}`}>
-              <PreviewCanvas className="aspect-video" />
+              <PreviewCanvas className="max-w-full min-h-[400px]" />
               
               {/* Quick Info */}
               <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">

@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useApp } from '@/store/AppContext';
 import { WindowCoordinates } from '@/types';
+import { Blinds3D } from './Blinds3D';
 
 interface PreviewCanvasProps {
   className?: string;
@@ -21,11 +22,15 @@ export function PreviewCanvas({ className = '' }: PreviewCanvasProps) {
   ) => {
     const { topLeft, topRight, bottomLeft, bottomRight } = coords;
     
-    // Convert normalized coordinates to canvas coordinates
-    const tl = { x: topLeft.x * canvasWidth, y: topLeft.y * canvasHeight };
-    const tr = { x: topRight.x * canvasWidth, y: topRight.y * canvasHeight };
-    const bl = { x: bottomLeft.x * canvasWidth, y: bottomLeft.y * canvasHeight };
-    const br = { x: bottomRight.x * canvasWidth, y: bottomRight.y * canvasHeight };
+    // Use original image dimensions for coordinate conversion
+    const originalWidth = state.photo.originalDimensions?.width || canvasWidth;
+    const originalHeight = state.photo.originalDimensions?.height || canvasHeight;
+    
+    // Convert normalized coordinates to original image coordinates
+    const tl = { x: topLeft.x * originalWidth, y: topLeft.y * originalHeight };
+    const tr = { x: topRight.x * originalWidth, y: topRight.y * originalHeight };
+    const bl = { x: bottomLeft.x * originalWidth, y: bottomLeft.y * originalHeight };
+    const br = { x: bottomRight.x * originalWidth, y: bottomRight.y * originalHeight };
 
     ctx.save();
 
@@ -92,13 +97,17 @@ export function PreviewCanvas({ className = '' }: PreviewCanvasProps) {
     // Load and draw background photo
     const backgroundImg = new Image();
     backgroundImg.onload = () => {
-      // Draw background photo
-      ctx.drawImage(backgroundImg, 0, 0, canvas.width, canvas.height);
+      // Draw background photo at original size
+      const originalWidth = state.photo.originalDimensions?.width || backgroundImg.width;
+      const originalHeight = state.photo.originalDimensions?.height || backgroundImg.height;
+      ctx.drawImage(backgroundImg, 0, 0, originalWidth, originalHeight);
 
       // Load and draw texture
       const textureImg = new Image();
       textureImg.onload = () => {
-        applyPerspective(ctx, textureImg, state.windowCoords!, canvas.width, canvas.height);
+        const originalWidth = state.photo.originalDimensions?.width || backgroundImg.width;
+        const originalHeight = state.photo.originalDimensions?.height || backgroundImg.height;
+        applyPerspective(ctx, textureImg, state.windowCoords!, originalWidth, originalHeight);
       };
       textureImg.onerror = () => {
         console.warn('Failed to load texture, using fallback');
@@ -110,37 +119,39 @@ export function PreviewCanvas({ className = '' }: PreviewCanvasProps) {
         if (fallbackCtx) {
           fallbackCtx.fillStyle = '#e5e7eb';
           fallbackCtx.fillRect(0, 0, 200, 200);
-          applyPerspective(ctx, fallbackCanvas as any, state.windowCoords!, canvas.width, canvas.height);
+          const originalWidth = state.photo.originalDimensions?.width || backgroundImg.width;
+          const originalHeight = state.photo.originalDimensions?.height || backgroundImg.height;
+          applyPerspective(ctx, fallbackCanvas as any, state.windowCoords!, originalWidth, originalHeight);
         }
       };
       textureImg.src = state.selectedProduct.texture;
     };
     backgroundImg.src = state.photo.url;
-  }, [state.photo.url, state.windowCoords, state.selectedProduct, applyPerspective]);
+  }, [state.photo.url, state.photo.originalDimensions, state.windowCoords, state.selectedProduct, applyPerspective]);
 
-  // Update canvas size based on container
+  // Update canvas size based on original image dimensions
   useEffect(() => {
     const updateCanvasSize = () => {
       const canvas = canvasRef.current;
-      if (!canvas) return;
+      if (!canvas || !state.photo.originalDimensions) return;
 
       const container = canvas.parentElement;
       if (!container) return;
 
-      const rect = container.getBoundingClientRect();
-      const aspectRatio = 16 / 9; // Default aspect ratio
+      const containerRect = container.getBoundingClientRect();
+      const { width: originalWidth, height: originalHeight } = state.photo.originalDimensions;
       
-      let width = rect.width;
-      let height = width / aspectRatio;
+      // Calculate scale to fit within container while maintaining aspect ratio
+      const scaleX = containerRect.width / originalWidth;
+      const scaleY = containerRect.height / originalHeight;
+      const scale = Math.min(scaleX, scaleY, 1); // Don't scale up, only down if needed
       
-      if (height > rect.height) {
-        height = rect.height;
-        width = height * aspectRatio;
-      }
+      const width = originalWidth * scale;
+      const height = originalHeight * scale;
 
       setCanvasSize({ width, height });
-      canvas.width = width * window.devicePixelRatio;
-      canvas.height = height * window.devicePixelRatio;
+      canvas.width = originalWidth * window.devicePixelRatio;
+      canvas.height = originalHeight * window.devicePixelRatio;
       canvas.style.width = `${width}px`;
       canvas.style.height = `${height}px`;
       
@@ -153,7 +164,7 @@ export function PreviewCanvas({ className = '' }: PreviewCanvasProps) {
     updateCanvasSize();
     window.addEventListener('resize', updateCanvasSize);
     return () => window.removeEventListener('resize', updateCanvasSize);
-  }, []);
+  }, [state.photo.originalDimensions]);
 
   // Re-render when state changes
   useEffect(() => {
@@ -177,11 +188,30 @@ export function PreviewCanvas({ className = '' }: PreviewCanvasProps) {
     );
   }
 
+  // Render 3D blinds if product is 3D
+  if (state.selectedProduct.is3D) {
+    return (
+      <div className={`relative bg-muted rounded-lg overflow-hidden ${className}`}>
+        <Blinds3D
+          windowCoords={state.windowCoords}
+          transforms={state.transforms}
+          texture={state.selectedProduct.texture}
+          modelUrl={state.selectedProduct.modelUrl}
+          backgroundImage={state.photo.url}
+          className="w-full h-full"
+        />
+        <div className="absolute top-4 left-4 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
+          3D Preview
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className={`relative bg-muted rounded-lg overflow-hidden ${className}`}>
+    <div className={`relative bg-muted rounded-lg overflow-auto flex justify-center items-center ${className}`}>
       <canvas
         ref={canvasRef}
-        className="w-full h-full object-contain"
+        className="block"
         style={{ maxWidth: '100%', maxHeight: '100%' }}
       />
       

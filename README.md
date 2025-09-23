@@ -1,10 +1,10 @@
-# Lovable - Blinds & Curtains Visualizer
+# Decor - Blinds & Curtains Visualizer
 
 **See your blinds in your home before buying** with advanced perspective mapping technology.
 
-## 🏠 What is Lovable?
+## 🏠 What is Decor?
 
-Lovable is a sophisticated web application that lets users:
+Decor is a sophisticated web application that lets users:
 - Take or upload photos of their windows
 - Mark window coordinates with draggable corner points
 - Apply realistic blind and curtain designs with perspective mapping
@@ -114,7 +114,7 @@ Ready for deployment to:
 
 ## 📄 License
 
-Built with Lovable - The AI-powered web app builder.
+Built with Decor - The AI-powered web app builder.
 
 ---
 

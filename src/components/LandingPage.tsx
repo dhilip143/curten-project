@@ -92,7 +92,7 @@ export function LandingPage() {
       <section className="px-4 py-16 lg:px-6">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-3xl font-bold text-foreground mb-8">
-            Why Choose Lovable?
+            Why Choose Decor?
           </h2>
           <div className="grid md:grid-cols-3 gap-8 text-left">
             <div>

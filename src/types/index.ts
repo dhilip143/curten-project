@@ -8,12 +8,14 @@ export interface WindowCoordinates {
 export interface Product {
   id: string;
   name: string;
-  category: 'roller' | 'venetian' | 'curtain' | 'shutter';
+  category: 'roller' | 'venetian' | 'curtain' | 'shutter' | '3d-blinds';
   thumbnail: string;
   texture: string;
   price?: number;
   description?: string;
   swatches?: string[];
+  is3D?: boolean;
+  modelUrl?: string; // For 3D models
 }
 
 export interface SceneTransforms {

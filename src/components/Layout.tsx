@@ -45,10 +45,10 @@ export function Layout({ children }: LayoutProps) {
             )}
             <div className="flex items-center gap-2 md:gap-3">
               <div className="w-7 h-7 md:w-8 md:h-8 bg-accent-gradient rounded-lg flex items-center justify-center">
-                <span className="text-accent-foreground font-bold text-xs md:text-sm">L</span>
+                <span className="text-accent-foreground font-bold text-xs md:text-sm">D</span>
               </div>
               <h1 className="text-lg md:text-xl font-semibold text-foreground">
-                Lovable
+                Decor
               </h1>
             </div>
           </div>
@@ -77,7 +77,7 @@ export function Layout({ children }: LayoutProps) {
       {/* Footer - Hidden on mobile to save space */}
       <footer className="hidden md:block bg-muted/50 border-t border-border px-4 py-6 lg:px-6">
         <div className="max-w-7xl mx-auto text-center text-sm text-muted-foreground">
-          <p>© 2024 Lovable. See your blinds in your home before buying.</p>
+          <p>© 2024 Decor. See your blinds in your home before buying.</p>
         </div>
       </footer>
     </div>

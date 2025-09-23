@@ -38,7 +38,7 @@ export function SceneManager() {
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       const sceneId = Math.random().toString(36).substring(7);
-      const mockShareUrl = `https://lovable.app/scene/${sceneId}`;
+      const mockShareUrl = `https://decor.app/scene/${sceneId}`;
       
       setShareUrl(mockShareUrl);
       
@@ -101,7 +101,7 @@ export function SceneManager() {
       
       // Create download link
       const link = document.createElement('a');
-      link.download = `lovable-design-${Date.now()}.png`;
+      link.download = `decor-design-${Date.now()}.png`;
       
       // In real implementation, you would get the canvas blob
       // For now, we'll use a placeholder
@@ -115,7 +115,7 @@ export function SceneManager() {
         ctx.fillStyle = '#374151';
         ctx.font = '48px Arial';
         ctx.textAlign = 'center';
-        ctx.fillText('Lovable Preview', canvas.width / 2, canvas.height / 2);
+        ctx.fillText('Decor Preview', canvas.width / 2, canvas.height / 2);
       }
       
       canvas.toBlob((blob) => {
@@ -160,7 +160,7 @@ Please contact me with pricing and installation details.
 
 Thank you!`;
 
-    const mailtoLink = `mailto:quotes@lovable.app?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    const mailtoLink = `mailto:quotes@decor.app?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     window.location.href = mailtoLink;
   };
 

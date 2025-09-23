@@ -4,10 +4,15 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { WindowCoordinates } from '@/types';
-import { Crosshair, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Check } from 'lucide-react';
+import { Crosshair, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Check, Loader2, Eye, Square, Maximize } from 'lucide-react';
+import { detectWindows, DetectionResult } from '@/lib/windowDetection';
+import { useToast } from '@/hooks/use-toast';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export function WindowSelector() {
   const { state, dispatch } = useApp();
+  const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [isDragging, setIsDragging] = useState<string | null>(null);
   const [localCoords, setLocalCoords] = useState<WindowCoordinates>({
     topLeft: { x: 0.2, y: 0.2 },
@@ -17,6 +22,9 @@ export function WindowSelector() {
   });
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+  const [isDetecting, setIsDetecting] = useState(false);
+  const [detectionResults, setDetectionResults] = useState<DetectionResult[]>([]);
+  const [showDetectionResults, setShowDetectionResults] = useState(false);
 
   useEffect(() => {
     const updateSize = () => {
@@ -35,6 +43,11 @@ export function WindowSelector() {
     setIsDragging(corner);
   };
 
+  const handleTouchStart = (corner: keyof WindowCoordinates, e: React.TouchEvent) => {
+    e.preventDefault();
+    setIsDragging(corner);
+  };
+
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (!isDragging || !containerRef.current) return;
 
@@ -48,7 +61,26 @@ export function WindowSelector() {
     }));
   }, [isDragging]);
 
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!isDragging || !containerRef.current) return;
+
+    e.preventDefault();
+    const touch = e.touches[0];
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = Math.max(0, Math.min(1, (touch.clientX - rect.left) / rect.width));
+    const y = Math.max(0, Math.min(1, (touch.clientY - rect.top) / rect.height));
+
+    setLocalCoords(prev => ({
+      ...prev,
+      [isDragging]: { x, y }
+    }));
+  }, [isDragging]);
+
   const handleMouseUp = useCallback(() => {
+    setIsDragging(null);
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
     setIsDragging(null);
   }, []);
 
@@ -56,12 +88,16 @@ export function WindowSelector() {
     if (isDragging) {
       document.addEventListener('mousemove', handleMouseMove as any);
       document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener('touchmove', handleTouchMove as any, { passive: false });
+      document.addEventListener('touchend', handleTouchEnd);
       return () => {
         document.removeEventListener('mousemove', handleMouseMove as any);
         document.removeEventListener('mouseup', handleMouseUp);
+        document.removeEventListener('touchmove', handleTouchMove as any);
+        document.removeEventListener('touchend', handleTouchEnd);
       };
     }
-  }, [isDragging, handleMouseMove, handleMouseUp]);
+  }, [isDragging, handleMouseMove, handleMouseUp, handleTouchMove, handleTouchEnd]);
 
   const nudgeCorner = (corner: keyof WindowCoordinates, direction: 'up' | 'down' | 'left' | 'right') => {
     const delta = 0.01;
@@ -82,13 +118,69 @@ export function WindowSelector() {
     }));
   };
 
-  const autoDetect = () => {
-    // Simple auto-detect algorithm - place rectangle in center area
-    setLocalCoords({
-      topLeft: { x: 0.25, y: 0.25 },
-      topRight: { x: 0.75, y: 0.25 },
-      bottomLeft: { x: 0.25, y: 0.75 },
-      bottomRight: { x: 0.75, y: 0.75 },
+  const autoDetect = async () => {
+    if (!state.photo.url || !state.photo.originalDimensions) {
+      toast({
+        title: "No Image",
+        description: "Please capture or upload a photo first.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsDetecting(true);
+    setShowDetectionResults(false);
+    
+    try {
+      const results = await detectWindows(state.photo.url, state.photo.originalDimensions);
+      
+      if (results.length === 0) {
+        toast({
+          title: "No Windows Detected",
+          description: "Could not automatically detect rectangular windows. Please mark manually.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      setDetectionResults(results);
+      setShowDetectionResults(true);
+      
+      // Auto-select the highest confidence result
+      const bestResult = results[0];
+      setLocalCoords(bestResult.coordinates);
+      
+      toast({
+        title: "Window Detected!",
+        description: `Found ${results.length} potential window${results.length > 1 ? 's' : ''}. ${bestResult.shape === 'square' ? 'Square' : 'Rectangular'} shape detected with ${Math.round(bestResult.confidence * 100)}% confidence.`,
+      });
+      
+      // Log detection results for debugging
+      console.log('Detection results:', results.map(r => ({
+        shape: r.shape,
+        confidence: Math.round(r.confidence * 100) + '%',
+        area: Math.round((r.coordinates.bottomRight.x - r.coordinates.topLeft.x) * (r.coordinates.bottomRight.y - r.coordinates.topLeft.y) * 100) + '% of image'
+      })));
+      
+    } catch (error) {
+      console.error('Auto-detection failed:', error);
+      toast({
+        title: "Detection Failed",
+        description: "Auto-detection encountered an error. Please mark the window manually.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsDetecting(false);
+    }
+  };
+
+  const selectDetectionResult = (result: DetectionResult) => {
+    setLocalCoords(result.coordinates);
+    setShowDetectionResults(false);
+    
+    toast({
+      title: "Window Selected",
+      description: `${result.shape === 'square' ? 'Square' : 'Rectangular'} window selected with ${Math.round(result.confidence * 100)}% confidence.`,
     });
   };
 
@@ -117,13 +209,13 @@ export function WindowSelector() {
             <Card className="card-premium p-4">
               <div
                 ref={containerRef}
-                className="relative aspect-video bg-muted rounded-lg overflow-hidden cursor-crosshair"
+                className="relative bg-muted rounded-lg overflow-auto cursor-crosshair flex justify-center items-center min-h-[400px]"
                 onMouseMove={handleMouseMove}
               >
                 <img
                   src={state.photo.url}
                   alt="Window photo"
-                  className="w-full h-full object-contain"
+                  className="max-w-full max-h-full object-contain"
                   draggable={false}
                 />
                 
@@ -144,6 +236,30 @@ export function WindowSelector() {
                     strokeWidth="2"
                     strokeDasharray="8,4"
                   />
+                  
+                  {/* Show detection results as alternative overlays */}
+                  {showDetectionResults && detectionResults.map((result, index) => {
+                    const isSelected = JSON.stringify(result.coordinates) === JSON.stringify(localCoords);
+                    if (isSelected) return null; // Don't show selected result twice
+                    
+                    return (
+                      <polygon
+                        key={index}
+                        points={`
+                          ${result.coordinates.topLeft.x * containerSize.width},${result.coordinates.topLeft.y * containerSize.height}
+                          ${result.coordinates.topRight.x * containerSize.width},${result.coordinates.topRight.y * containerSize.height}
+                          ${result.coordinates.bottomRight.x * containerSize.width},${result.coordinates.bottomRight.y * containerSize.height}
+                          ${result.coordinates.bottomLeft.x * containerSize.width},${result.coordinates.bottomLeft.y * containerSize.height}
+                        `}
+                        fill="rgba(34, 197, 94, 0.05)"
+                        stroke="rgb(34, 197, 94)"
+                        strokeWidth="1"
+                        strokeDasharray="4,4"
+                        className="cursor-pointer"
+                        onClick={() => selectDetectionResult(result)}
+                      />
+                    );
+                  })}
                 </svg>
 
                 {/* Draggable Corner Handles */}
@@ -159,6 +275,7 @@ export function WindowSelector() {
                       zIndex: 10,
                     }}
                     onMouseDown={() => handleMouseDown(corner as keyof WindowCoordinates)}
+                    onTouchStart={(e) => handleTouchStart(corner as keyof WindowCoordinates, e)}
                   />
                 ))}
               </div>
@@ -174,10 +291,42 @@ export function WindowSelector() {
                   onClick={autoDetect}
                   variant="outline"
                   className="w-full gap-2"
+                  disabled={isDetecting}
                 >
-                  <Crosshair className="w-4 h-4" />
-                  Auto-detect
+                  {isDetecting ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Crosshair className="w-4 h-4" />
+                  )}
+                  {isDetecting ? 'Detecting...' : 'Auto-detect Windows'}
                 </Button>
+
+                {showDetectionResults && detectionResults.length > 1 && (
+                  <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground">Multiple windows detected:</p>
+                    {detectionResults.map((result, index) => (
+                      <Button
+                        key={index}
+                        variant="ghost"
+                        size="sm"
+                        className="w-full justify-start gap-2 text-left"
+                        onClick={() => selectDetectionResult(result)}
+                      >
+                        {result.shape === 'square' ? (
+                          <Square className="w-4 h-4" />
+                        ) : (
+                          <Maximize className="w-4 h-4" />
+                        )}
+                        <span className="flex-1">
+                          {result.shape === 'square' ? 'Square' : 'Rectangle'} 
+                          <span className="text-muted-foreground ml-1">
+                            ({Math.round(result.confidence * 100)}%)
+                          </span>
+                        </span>
+                      </Button>
+                    ))}
+                  </div>
+                )}
                 
                 <Button
                   onClick={confirmSelection}
@@ -277,6 +426,24 @@ export function WindowSelector() {
           </div>
         </div>
       </div>
+
+      {/* Mobile Floating Action Button for Auto-detect */}
+      {isMobile && (
+        <div className="fixed bottom-20 right-4 z-50">
+          <Button
+            onClick={autoDetect}
+            disabled={isDetecting}
+            className="rounded-full w-14 h-14 shadow-lg"
+            size="lg"
+          >
+            {isDetecting ? (
+              <Loader2 className="w-6 h-6 animate-spin" />
+            ) : (
+              <Crosshair className="w-6 h-6" />
+            )}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

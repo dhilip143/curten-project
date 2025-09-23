@@ -53,6 +53,40 @@ const mockProducts: Product[] = [
     price: 349,
     description: 'Classic plantation shutters with adjustable louvers',
   },
+  // 3D Blinds Products
+  {
+    id: '3d-venetian-1',
+    name: '3D Venetian Blinds',
+    category: '3d-blinds',
+    thumbnail: '/assets/—Pngtree—white slats window blinds png_14597214.png',
+    texture: '/assets/—Pngtree—white slats window blinds png_14597214.png',
+    price: 199,
+    description: 'Realistic 3D venetian blinds with adjustable slats',
+    is3D: true,
+    modelUrl: '/assets/window_blinds_low_poly_3d_model.glb',
+  },
+  {
+    id: '3d-roller-1',
+    name: '3D Roller Blinds',
+    category: '3d-blinds',
+    thumbnail: '/assets/—Pngtree—white slats window blinds png_14597214.png',
+    texture: '/assets/—Pngtree—white slats window blinds png_14597214.png',
+    price: 149,
+    description: 'Modern 3D roller blinds with realistic fabric texture',
+    is3D: true,
+    modelUrl: '/assets/window_blind_-_3mb.glb',
+  },
+  {
+    id: '3d-wooden-1',
+    name: '3D Wooden Blinds',
+    category: '3d-blinds',
+    thumbnail: '/assets/—Pngtree—white slats window blinds png_14597214.png',
+    texture: '/assets/—Pngtree—white slats window blinds png_14597214.png',
+    price: 249,
+    description: 'Premium 3D wooden blinds with natural wood grain',
+    is3D: true,
+    modelUrl: '/assets/window_blinds_low_poly_3d_model.glb',
+  },
 ];
 
 export function CatalogBrowser() {
@@ -66,6 +100,7 @@ export function CatalogBrowser() {
     { id: 'venetian', name: 'Venetian Blinds' },
     { id: 'curtain', name: 'Curtains' },
     { id: 'shutter', name: 'Shutters' },
+    { id: '3d-blinds', name: '3D Blinds' },
   ];
 
   const handleCategoryFilter = (category: string) => {
