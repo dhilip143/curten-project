@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useCallback } from 'react';
 import * as THREE from 'three';
 // @ts-ignore
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
-import { WindowCoordinates, SceneTransforms } from '@/types';
+import { WindowCoordinates, SceneTransforms, TextureOption } from '@/types';
 
 interface Blinds3DProps {
   windowCoords: WindowCoordinates;
@@ -10,10 +10,11 @@ interface Blinds3DProps {
   texture: string;
   modelUrl?: string;
   backgroundImage?: string;
+  selectedTexture?: TextureOption;
   className?: string;
 }
 
-export function Blinds3D({ windowCoords, transforms, texture, modelUrl, backgroundImage, className = '' }: Blinds3DProps) {
+export function Blinds3D({ windowCoords, transforms, texture, modelUrl, backgroundImage, selectedTexture, className = '' }: Blinds3DProps) {
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene>();
   const rendererRef = useRef<THREE.WebGLRenderer>();
@@ -79,50 +80,235 @@ export function Blinds3D({ windowCoords, transforms, texture, modelUrl, backgrou
         // Scale model to fit exactly within the window rectangle
         const scaleX = windowWidth / modelSize.x;
         const scaleY = windowHeight / modelSize.y;
-        const uniformScale = Math.min(scaleX, scaleY) * 0.8; // 0.8 to leave some margin
+        const uniformScale = Math.min(scaleX, scaleY) * 0.6; // 0.6 to ensure full model is visible
         
-        model.scale.setScalar(uniformScale * transforms.scale);
+        // Apply user transform scales and additional scale reduction for blinds.glb model
+        console.log('Before applying transforms:', {
+          uniformScale,
+          transformsScale: transforms.scale,
+          horizontalScale: transforms.horizontalScale,
+          verticalScale: transforms.verticalScale
+        });
+        
+        let finalScaleX = uniformScale * transforms.scale * transforms.horizontalScale;
+        let finalScaleY = uniformScale * transforms.scale * transforms.verticalScale;
+        let finalScaleZ = uniformScale * transforms.scale;
+        
+        console.log('After initial transform calculation:', {
+          finalScaleX,
+          finalScaleY,
+          finalScaleZ
+        });
+        
+        if (modelUrl && modelUrl.includes('blinds.glb')) {
+          finalScaleX *= 0.3; // Increase scale to 30% for better visibility
+          finalScaleY *= 0.3; // Increase scale to 30% for better visibility
+          finalScaleZ *= 0.3; // Apply same scale to Z-axis
+        } else if (modelUrl && modelUrl.includes('plain_blinds.glb')) {
+          finalScaleX *= 0.4; // Scale for plain_blinds.glb model
+          finalScaleY *= 0.4; // Scale for plain_blinds.glb model
+          finalScaleZ *= 0.4; // Apply same scale to Z-axis
+        }
+        
+        console.log('Model loaded:', {
+          modelSize,
+          windowWidth,
+          windowHeight,
+          uniformScale,
+          finalScaleX,
+          finalScaleY,
+          finalScaleZ,
+          transforms: {
+            scale: transforms.scale,
+            horizontalScale: transforms.horizontalScale,
+            verticalScale: transforms.verticalScale,
+            rotation: transforms.rotation,
+            horizontalOffset: transforms.horizontalOffset,
+            verticalOffset: transforms.verticalOffset
+          },
+          selectedTexture: selectedTexture?.name,
+          selectedTextureUrl: selectedTexture?.texture
+        });
+        
+        // Apply uniform scaling to maintain model proportions
+        model.scale.set(finalScaleX, finalScaleY, finalScaleZ);
         
         // Position model to align with window coordinates
         // Convert normalized coordinates to 3D space coordinates
         const centerX = (topLeft.x + topRight.x) / 2 - 0.5; // Center and offset
         const centerY = (topLeft.y + bottomLeft.y) / 2 - 0.5; // Center and offset
         
-        model.position.set(centerX, -centerY, 0); // Flip Y for 3D space
+        // Position model at the center of the window coordinates
+        // Scale the position to match the background image size
+        model.position.set(centerX * 2, -centerY * 2, 0.1); // Scale and position in front of background
         
-        // Apply rotation and vertical offset
+        // Apply rotation and offsets
         model.rotation.z = transforms.rotation * Math.PI / 180;
+        model.rotation.y = Math.PI / 2; // 90 degrees around Y-axis
         model.position.y += transforms.verticalOffset * windowHeight / 100;
+        model.position.x += transforms.horizontalOffset * windowWidth / 100;
         
-        // Apply opacity to all materials
+        // Apply texture and opacity to all materials
+        // Only apply textures for plain_blinds.glb models, not for real blinds
+        const isPlainBlinds = modelUrl && modelUrl.includes('plain_blinds.glb');
+        
         model.traverse((child) => {
           if (child instanceof THREE.Mesh) {
-            if (child.material instanceof THREE.Material) {
-              child.material.transparent = true;
-              child.material.opacity = transforms.opacity;
+            console.log('Processing mesh:', child.name || 'unnamed', 'Material type:', child.material?.constructor.name);
+            
+            if (child.material) {
+              // Handle both single materials and material arrays
+              const materials = Array.isArray(child.material) ? child.material : [child.material];
+              
+              materials.forEach((material, index) => {
+                if (material instanceof THREE.Material) {
+                  console.log(`Processing material ${index}:`, material.constructor.name);
+                  
+                  // Apply selected texture only if this is a plain blinds model
+                  if (selectedTexture && isPlainBlinds) {
+                    console.log('Applying texture to plain blinds material:', selectedTexture.name, selectedTexture.texture);
+                    console.log('Texture URL being loaded:', selectedTexture.texture);
+                    console.log('Is flower texture?', selectedTexture.name.toLowerCase().includes('flower'));
+                    const textureLoader = new THREE.TextureLoader();
+                    
+                    // Add more detailed error handling and debugging
+                    const newTexture = textureLoader.load(
+                      selectedTexture.texture,
+                      (texture) => {
+                        console.log('Texture loaded successfully for plain blinds material:', selectedTexture.name);
+                        console.log('Texture details:', {
+                          name: selectedTexture.name,
+                          url: selectedTexture.texture,
+                          width: texture.image?.width,
+                          height: texture.image?.height,
+                          format: texture.format,
+                          type: texture.type
+                        });
+                        
+                        // Ensure texture is properly configured after loading
+                        texture.needsUpdate = true;
+                        
+                        // Check if texture image is valid
+                        if (!texture.image || texture.image.width === 0 || texture.image.height === 0) {
+                          console.warn('Invalid texture image for:', selectedTexture.name);
+                        } else {
+                          console.log('Texture image is valid:', {
+                            width: texture.image.width,
+                            height: texture.image.height,
+                            complete: texture.image.complete
+                          });
+                          
+                          // Now apply the material with the loaded texture
+                          console.log('Applying material with loaded texture:', selectedTexture.name);
+                          
+                          // Additional texture configuration for problematic textures
+                          texture.colorSpace = THREE.SRGBColorSpace;
+                          texture.format = THREE.RGBAFormat;
+                          texture.needsUpdate = true;
+                          
+                          // Try different material types based on texture name
+                          let newMaterial;
+                          if (selectedTexture.name.toLowerCase().includes('flower')) {
+                            // Use MeshLambertMaterial for flower texture as it might handle it better
+                            console.log('Using MeshLambertMaterial for flower texture');
+                            newMaterial = new THREE.MeshLambertMaterial({
+                              map: texture,
+                              color: 0xffffff, // White color to show texture clearly
+                              transparent: true,
+                              opacity: transforms.opacity,
+                              side: THREE.DoubleSide, // Ensure both sides are rendered
+                              depthWrite: true, // Ensure proper depth rendering
+                              depthTest: true
+                            });
+                          } else {
+                            // Use MeshBasicMaterial for other textures
+                            newMaterial = new THREE.MeshBasicMaterial({
+                              map: texture,
+                              color: 0xffffff, // White color to show texture clearly
+                              transparent: true,
+                              opacity: transforms.opacity,
+                              side: THREE.DoubleSide, // Ensure both sides are rendered
+                              depthWrite: true, // Ensure proper depth rendering
+                              depthTest: true
+                            });
+                          }
+                          
+                          console.log('New material created with loaded texture:', newMaterial);
+                          console.log('Material map:', newMaterial.map);
+                          console.log('Material color:', newMaterial.color);
+                          
+                          // Replace the material
+                          if (Array.isArray(child.material)) {
+                            child.material[index] = newMaterial;
+                          } else {
+                            child.material = newMaterial;
+                          }
+                          
+                          console.log('Material with texture applied to mesh');
+                        }
+                      },
+                      (progress) => {
+                        console.log('Texture loading progress for', selectedTexture.name, ':', progress);
+                      },
+                      (error) => {
+                        console.error('Error loading texture for plain blinds material:', selectedTexture.name, error);
+                        console.error('Failed texture URL:', selectedTexture.texture);
+                        
+                        // Create a fallback material without texture if loading fails
+                        const fallbackMaterial = new THREE.MeshBasicMaterial({
+                          color: 0x8B4513, // Brown color as fallback
+                          transparent: true,
+                          opacity: transforms.opacity,
+                          side: THREE.DoubleSide,
+                          depthWrite: true,
+                          depthTest: true
+                        });
+                        
+                        if (Array.isArray(child.material)) {
+                          child.material[index] = fallbackMaterial;
+                        } else {
+                          child.material = fallbackMaterial;
+                        }
+                        return;
+                      }
+                    );
+                    
+                    // Ensure texture properties are set correctly
+                    newTexture.wrapS = THREE.RepeatWrapping;
+                    newTexture.wrapT = THREE.RepeatWrapping;
+                    newTexture.flipY = false; // Important for proper texture orientation
+                    newTexture.generateMipmaps = true;
+                    newTexture.minFilter = THREE.LinearMipmapLinearFilter;
+                    newTexture.magFilter = THREE.LinearFilter;
+                  } else {
+                    // For real blinds (non-plain_blinds models), keep original material but adjust opacity
+                    if (material instanceof THREE.MeshBasicMaterial || 
+                        material instanceof THREE.MeshLambertMaterial ||
+                        material instanceof THREE.MeshStandardMaterial ||
+                        material instanceof THREE.MeshPhongMaterial) {
+                      
+                      if (isPlainBlinds) {
+                        // For plain blinds without texture, set to white
+                        material.color.setHex(0xffffff);
+                      }
+                      // For real blinds, keep original color but adjust opacity
+                      material.transparent = true;
+                      material.opacity = transforms.opacity;
+                      material.side = THREE.DoubleSide;
+                      material.depthWrite = true;
+                      material.depthTest = true;
+                      material.needsUpdate = true;
+                    }
+                  }
+                }
+              });
             }
           }
         });
         
         group.add(model);
         
-        // Add window rectangle outline for reference
-        const { topLeft: tl, topRight: tr, bottomLeft: bl, bottomRight: br } = windowCoords;
-        const rectGeometry = new THREE.BufferGeometry().setFromPoints([
-          new THREE.Vector3(tl.x - 0.5, -(tl.y - 0.5), 0.01),
-          new THREE.Vector3(tr.x - 0.5, -(tr.y - 0.5), 0.01),
-          new THREE.Vector3(br.x - 0.5, -(br.y - 0.5), 0.01),
-          new THREE.Vector3(bl.x - 0.5, -(bl.y - 0.5), 0.01),
-          new THREE.Vector3(tl.x - 0.5, -(tl.y - 0.5), 0.01),
-        ]);
-        
-        const rectMaterial = new THREE.LineBasicMaterial({ 
-          color: 0x3b82f6, 
-          transparent: true, 
-          opacity: 0.5 
-        });
-        const rectLine = new THREE.Line(rectGeometry, rectMaterial);
-        group.add(rectLine);
+        // Window rectangle outline removed for cleaner appearance
         
         return group;
       }
@@ -182,7 +368,7 @@ export function Blinds3D({ windowCoords, transforms, texture, modelUrl, backgrou
     }
     
     return group;
-  }, [windowCoords, transforms, texture, modelUrl, load3DModel]);
+  }, [windowCoords, transforms, texture, modelUrl, selectedTexture, load3DModel]);
 
   // Initialize Three.js scene
   useEffect(() => {
@@ -194,18 +380,26 @@ export function Blinds3D({ windowCoords, transforms, texture, modelUrl, backgrou
     // Set background - either image or solid color
     if (backgroundImage) {
       const textureLoader = new THREE.TextureLoader();
-      const backgroundTexture = textureLoader.load(backgroundImage);
-      
-      // Create a plane geometry for the background to maintain aspect ratio
-      const backgroundGeometry = new THREE.PlaneGeometry(2, 2);
-      const backgroundMaterial = new THREE.MeshBasicMaterial({
-        map: backgroundTexture,
-        side: THREE.DoubleSide
+      const backgroundTexture = textureLoader.load(backgroundImage, (texture) => {
+        // Get the actual image dimensions
+        const image = texture.image;
+        const aspectRatio = image.width / image.height;
+        
+        // Create plane geometry based on image aspect ratio
+        // Use a base height of 3 and calculate width to maintain aspect ratio
+        const height = 3;
+        const width = height * aspectRatio;
+        
+        const backgroundGeometry = new THREE.PlaneGeometry(width, height);
+        const backgroundMaterial = new THREE.MeshBasicMaterial({
+          map: texture,
+          side: THREE.DoubleSide
+        });
+        const backgroundPlane = new THREE.Mesh(backgroundGeometry, backgroundMaterial);
+        backgroundPlane.position.z = -1; // Place behind everything
+        backgroundRef.current = backgroundPlane;
+        scene.add(backgroundPlane);
       });
-      const backgroundPlane = new THREE.Mesh(backgroundGeometry, backgroundMaterial);
-      backgroundPlane.position.z = -1; // Place behind everything
-      backgroundRef.current = backgroundPlane;
-      scene.add(backgroundPlane);
       
       // Set transparent background so the plane shows through
       scene.background = null;
@@ -300,6 +494,7 @@ export function Blinds3D({ windowCoords, transforms, texture, modelUrl, backgrou
 
   // Update blinds when transforms change
   useEffect(() => {
+    console.log('Transforms changed, recreating blinds:', transforms);
     if (!sceneRef.current || !blindsRef.current) return;
 
     // Remove old blinds
@@ -310,6 +505,7 @@ export function Blinds3D({ windowCoords, transforms, texture, modelUrl, backgrou
       if (newBlinds) {
         blindsRef.current = newBlinds;
         sceneRef.current?.add(newBlinds);
+        console.log('New blinds created with updated transforms');
       }
     });
   }, [transforms, createBlindsGeometry]);
@@ -323,19 +519,28 @@ export function Blinds3D({ windowCoords, transforms, texture, modelUrl, backgrou
       sceneRef.current.remove(backgroundRef.current);
     }
 
-    // Create new background
+    // Create new background with actual image dimensions
     const textureLoader = new THREE.TextureLoader();
-    const backgroundTexture = textureLoader.load(backgroundImage);
-    
-    const backgroundGeometry = new THREE.PlaneGeometry(2, 2);
-    const backgroundMaterial = new THREE.MeshBasicMaterial({
-      map: backgroundTexture,
-      side: THREE.DoubleSide
+    const backgroundTexture = textureLoader.load(backgroundImage, (texture) => {
+      // Get the actual image dimensions
+      const image = texture.image;
+      const aspectRatio = image.width / image.height;
+      
+      // Create plane geometry based on image aspect ratio
+      // Use a base height of 3 and calculate width to maintain aspect ratio
+      const height = 3;
+      const width = height * aspectRatio;
+      
+      const backgroundGeometry = new THREE.PlaneGeometry(width, height);
+      const backgroundMaterial = new THREE.MeshBasicMaterial({
+        map: texture,
+        side: THREE.DoubleSide
+      });
+      const backgroundPlane = new THREE.Mesh(backgroundGeometry, backgroundMaterial);
+      backgroundPlane.position.z = -1;
+      backgroundRef.current = backgroundPlane;
+      sceneRef.current?.add(backgroundPlane);
     });
-    const backgroundPlane = new THREE.Mesh(backgroundGeometry, backgroundMaterial);
-    backgroundPlane.position.z = -1;
-    backgroundRef.current = backgroundPlane;
-    sceneRef.current.add(backgroundPlane);
     
     sceneRef.current.background = null;
   }, [backgroundImage]);

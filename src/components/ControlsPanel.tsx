@@ -24,10 +24,31 @@ export function ControlsPanel() {
     });
   };
 
+  const handleVerticalScaleChange = (values: number[]) => {
+    dispatch({
+      type: 'UPDATE_TRANSFORMS',
+      payload: { verticalScale: values[0] / 100 }
+    });
+  };
+
+  const handleHorizontalScaleChange = (values: number[]) => {
+    dispatch({
+      type: 'UPDATE_TRANSFORMS',
+      payload: { horizontalScale: values[0] / 100 }
+    });
+  };
+
   const handleVerticalOffsetChange = (values: number[]) => {
     dispatch({
       type: 'UPDATE_TRANSFORMS',
       payload: { verticalOffset: values[0] }
+    });
+  };
+
+  const handleHorizontalOffsetChange = (values: number[]) => {
+    dispatch({
+      type: 'UPDATE_TRANSFORMS',
+      payload: { horizontalOffset: values[0] }
     });
   };
 
@@ -51,7 +72,10 @@ export function ControlsPanel() {
       payload: {
         opacity: 0.9,
         scale: 1,
+        verticalScale: 1,
+        horizontalScale: 1,
         verticalOffset: 0,
+        horizontalOffset: 0,
         rotation: 0,
         isOpen: true,
       }
@@ -134,6 +158,42 @@ export function ControlsPanel() {
         />
       </div>
 
+      {/* Vertical Scale Control */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <Label className="text-sm font-medium">Vertical Scale</Label>
+          <span className="text-sm text-muted-foreground">
+            {Math.round(state.transforms.verticalScale * 100)}%
+          </span>
+        </div>
+        <Slider
+          value={[state.transforms.verticalScale * 100]}
+          onValueChange={handleVerticalScaleChange}
+          min={50}
+          max={200}
+          step={5}
+          className="w-full"
+        />
+      </div>
+
+      {/* Horizontal Scale Control */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <Label className="text-sm font-medium">Horizontal Scale</Label>
+          <span className="text-sm text-muted-foreground">
+            {Math.round(state.transforms.horizontalScale * 100)}%
+          </span>
+        </div>
+        <Slider
+          value={[state.transforms.horizontalScale * 100]}
+          onValueChange={handleHorizontalScaleChange}
+          min={50}
+          max={200}
+          step={5}
+          className="w-full"
+        />
+      </div>
+
       {/* Vertical Offset Control */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
@@ -145,6 +205,24 @@ export function ControlsPanel() {
         <Slider
           value={[state.transforms.verticalOffset]}
           onValueChange={handleVerticalOffsetChange}
+          min={-20}
+          max={20}
+          step={1}
+          className="w-full"
+        />
+      </div>
+
+      {/* Horizontal Offset Control */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <Label className="text-sm font-medium">Horizontal Position</Label>
+          <span className="text-sm text-muted-foreground">
+            {state.transforms.horizontalOffset > 0 ? '+' : ''}{state.transforms.horizontalOffset}%
+          </span>
+        </div>
+        <Slider
+          value={[state.transforms.horizontalOffset]}
+          onValueChange={handleHorizontalOffsetChange}
           min={-20}
           max={20}
           step={1}

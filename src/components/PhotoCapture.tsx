@@ -116,8 +116,12 @@ export function PhotoCapture() {
 
   const retakePhoto = () => {
     setCapturedPhoto(null);
+    // Clear the app state photo to go back to upload interface
+    dispatch({ type: 'SET_PHOTO', payload: {} });
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
+      // Trigger the file input dialog
+      fileInputRef.current.click();
     }
   };
 

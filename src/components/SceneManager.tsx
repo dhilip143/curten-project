@@ -14,7 +14,7 @@ import {
   Loader2 
 } from 'lucide-react';
 
-export function SceneManager() {
+export function SceneManager({ exportFunction = null }: { exportFunction?: (() => Promise<Blob | null>) | null } = {}) {
   const { state, dispatch } = useApp();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
@@ -96,44 +96,43 @@ export function SceneManager() {
     setIsExporting(true);
     
     try {
-      // Mock export - in real implementation, this would render high-quality image
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      let blob: Blob | null = null;
+
+      // Try to use the export function first
+      if (exportFunction && typeof exportFunction === 'function') {
+        console.log('Using export function');
+        blob = await exportFunction();
+      } else {
+        console.log('Export function not available, trying fallback method');
+        // Fallback: try to capture canvas directly
+        const canvas = document.querySelector('canvas');
+        if (canvas) {
+          blob = await new Promise<Blob | null>((resolve) => {
+            canvas.toBlob(resolve, 'image/png', 1.0);
+          });
+        }
+      }
+      
+      if (!blob) {
+        throw new Error('Failed to generate image - no canvas found');
+      }
       
       // Create download link
       const link = document.createElement('a');
-      link.download = `decor-design-${Date.now()}.png`;
-      
-      // In real implementation, you would get the canvas blob
-      // For now, we'll use a placeholder
-      const canvas = document.createElement('canvas');
-      canvas.width = 1920;
-      canvas.height = 1080;
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.fillStyle = '#f3f4f6';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = '#374151';
-        ctx.font = '48px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText('Decor Preview', canvas.width / 2, canvas.height / 2);
-      }
-      
-      canvas.toBlob((blob) => {
-        if (blob) {
-          link.href = URL.createObjectURL(blob);
-          link.click();
-          URL.revokeObjectURL(link.href);
-        }
-      });
+      link.download = `blinds-visualization-${Date.now()}.png`;
+      link.href = URL.createObjectURL(blob);
+      link.click();
+      URL.revokeObjectURL(link.href);
 
       toast({
         title: "Download Complete",
         description: "Your visualization has been downloaded.",
       });
     } catch (error) {
+      console.error('Download error:', error);
       toast({
         title: "Download Failed",
-        description: "Unable to download image. Please try again.",
+        description: error instanceof Error ? error.message : "Unable to download image. Please try again.",
         variant: "destructive"
       });
     } finally {

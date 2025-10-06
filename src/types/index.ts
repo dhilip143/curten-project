@@ -16,12 +16,23 @@ export interface Product {
   swatches?: string[];
   is3D?: boolean;
   modelUrl?: string; // For 3D models
+  textureOptions?: TextureOption[]; // Available texture options for 3D models
+}
+
+export interface TextureOption {
+  id: string;
+  name: string;
+  texture: string;
+  thumbnail: string;
 }
 
 export interface SceneTransforms {
   opacity: number;
   scale: number;
+  verticalScale: number;
+  horizontalScale: number;
   verticalOffset: number;
+  horizontalOffset: number;
   rotation: number;
   isOpen: boolean;
 }
@@ -44,6 +55,7 @@ export interface AppState {
   };
   windowCoords?: WindowCoordinates;
   selectedProduct?: Product;
+  selectedTexture?: TextureOption; // Currently selected texture for 3D models
   transforms: SceneTransforms;
   scene?: Scene;
   isLoading: boolean;
@@ -55,6 +67,7 @@ export type AppAction =
   | { type: 'SET_PHOTO'; payload: { file?: File; url?: string; originalDimensions?: { width: number; height: number } } }
   | { type: 'SET_WINDOW_COORDS'; payload: WindowCoordinates }
   | { type: 'SET_SELECTED_PRODUCT'; payload: Product }
+  | { type: 'SET_SELECTED_TEXTURE'; payload: TextureOption }
   | { type: 'UPDATE_TRANSFORMS'; payload: Partial<SceneTransforms> }
   | { type: 'SET_SCENE'; payload: Scene }
   | { type: 'SET_LOADING'; payload: boolean }

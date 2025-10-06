@@ -3,8 +3,8 @@ import { useApp } from '@/store/AppContext';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Product } from '@/types';
-import { Check, Filter } from 'lucide-react';
+import { Product, TextureOption } from '@/types';
+import { Check, Filter, Palette } from 'lucide-react';
 
 // Mock product data
 const mockProducts: Product[] = [
@@ -26,15 +26,7 @@ const mockProducts: Product[] = [
     price: 149,
     description: 'Elegant wooden slats with adjustable light control',
   },
-  {
-    id: 'curtain-1',
-    name: 'Luxury Fabric Curtain',
-    category: 'curtain',
-    thumbnail: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjE1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjE1MCIgZmlsbD0iI2Y4ZjlmYSIvPjxwYXRoIGQ9Ik0wIDAgQzMwIDIwIDQwIDMwIDYwIDQwIEMxMDAgNjAgMTIwIDgwIDE2MCA5MCBDMTU4IDEwNSAxNTUgMTIwIDE1MiAxNTAgTDAgMTUwIFoiIGZpbGw9IiM2YjcyODAiLz48cGF0aCBkPSJNMjAwIDAgQzE3MCAyMCAxNjAgMzAgMTQwIDQwIEMxMDAgNjAgODAgODAgNDAgOTAgQzQyIDEwNSA0NSAxMjAgNDggMTUwIEwyMDAgMTUwIFoiIGZpbGw9IiM2YjcyODAiLz48L3N2Zz4=',
-    texture: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybieBpZD0iY3VydGFpbiIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSIgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIj48cmVjdCB3aWR0aD0iMTAiIGhlaWdodD0iMTAiIGZpbGw9IiM2YjcyODAiLz48cGF0aCBkPSJNMCAwIDUgNSAxMCAwIiBzdHJva2U9IiM1NTYwNmYiIGZpbGw9Im5vbmUiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSI1MDAiIGhlaWdodD0iMzAwIiBmaWxsPSJ1cmwoI2N1cnRhaW4pIi8+PC9zdmc+',
-    price: 199,
-    description: 'Premium fabric curtains with elegant draping',
-  },
+ 
   {
     id: 'roller-2',
     name: 'Blackout Roller Blind',
@@ -87,12 +79,63 @@ const mockProducts: Product[] = [
     is3D: true,
     modelUrl: '/assets/window_blinds_low_poly_3d_model.glb',
   },
+  {
+    id: 'real-blind-1',
+    name: 'REAL Blind',
+    category: '3d-blinds',
+    thumbnail: '/assets/blinds-thumbnail.svg',
+    texture: '/assets/—Pngtree—white slats window blinds png_14597214.png',
+    price: 299,
+    description: 'High-quality realistic blinds with authentic appearance',
+    is3D: true,
+    modelUrl: '/assets/blinds.glb',
+    textureOptions: [
+      {
+        id: 'texture-1',
+        name: 'Baked Pine',
+        texture: '/assets/baked%20pine.png',
+        thumbnail: '/assets/baked%20pine.png',
+      },
+      {
+        id: 'texture-2',
+        name: 'Flower Baked',
+        texture: '/assets/flowerbaked.png',
+        thumbnail: '/assets/flowerbaked.png',
+      },
+    ],
+  },
+  {
+    id: 'plain-blind-1',
+    name: 'Plain Blind',
+    category: '3d-blinds',
+    thumbnail: '/assets/blinds-thumbnail.svg',
+    texture: '/assets/—Pngtree—white slats window blinds png_14597214.png',
+    price: 199,
+    description: 'Simple and elegant plain blinds with customizable textures',
+    is3D: true,
+    modelUrl: '/assets/plain_blinds.glb',
+    textureOptions: [
+      {
+        id: 'texture-1',
+        name: 'Baked Pine',
+        texture: '/assets/baked%20pine.png',
+        thumbnail: '/assets/baked%20pine.png',
+      },
+      {
+        id: 'texture-2',
+        name: 'Flower Baked',
+        texture: '/assets/flowerbaked.png',
+        thumbnail: '/assets/flowerbaked.png',
+      },
+    ],
+  },
 ];
 
 export function CatalogBrowser() {
   const { state, dispatch } = useApp();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [filteredProducts, setFilteredProducts] = useState(mockProducts);
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
 
   const categories = [
     { id: 'all', name: 'All Products' },
@@ -114,7 +157,15 @@ export function CatalogBrowser() {
 
   const handleSelectProduct = (product: Product) => {
     dispatch({ type: 'SET_SELECTED_PRODUCT', payload: product });
+    // Set the first texture option as default if available
+    if (product.textureOptions && product.textureOptions.length > 0) {
+      dispatch({ type: 'SET_SELECTED_TEXTURE', payload: product.textureOptions[0] });
+    }
     dispatch({ type: 'SET_STEP', payload: 'preview' });
+  };
+
+  const handleSelectTexture = (texture: TextureOption) => {
+    dispatch({ type: 'SET_SELECTED_TEXTURE', payload: texture });
   };
 
   return (
@@ -149,8 +200,13 @@ export function CatalogBrowser() {
           {filteredProducts.map((product) => (
             <Card
               key={product.id}
-              className="card-premium p-4 interactive"
-              onClick={() => handleSelectProduct(product)}
+              className={`card-premium p-4 interactive ${
+                selectedProductId === product.id ? 'ring-2 ring-accent' : ''
+              }`}
+              onClick={() => {
+                setSelectedProductId(product.id);
+                handleSelectProduct(product);
+              }}
             >
               <div className="aspect-video bg-muted rounded-lg overflow-hidden mb-4">
                 <img
@@ -189,6 +245,7 @@ export function CatalogBrowser() {
                     className="btn-accent gap-2"
                     onClick={(e) => {
                       e.stopPropagation();
+                      setSelectedProductId(product.id);
                       handleSelectProduct(product);
                     }}
                   >
@@ -200,6 +257,75 @@ export function CatalogBrowser() {
             </Card>
           ))}
         </div>
+
+        {/* Texture Options for Selected 3D Product - Only show for plain blinds */}
+        {selectedProductId && (
+          <div className="mt-8">
+            {(() => {
+              const selectedProduct = filteredProducts.find(p => p.id === selectedProductId);
+              if (selectedProduct?.textureOptions && 
+                  selectedProduct.textureOptions.length > 0 && 
+                  selectedProduct.modelUrl && 
+                  selectedProduct.modelUrl.includes('plain_blinds.glb')) {
+                return (
+                  <div className="bg-muted/30 rounded-lg p-6">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Palette className="w-5 h-5 text-accent" />
+                      <h3 className="text-lg font-semibold text-foreground">
+                        Choose Texture for {selectedProduct.name}
+                      </h3>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      {selectedProduct.textureOptions.map((texture) => (
+                        <Card
+                          key={texture.id}
+                          className={`p-3 cursor-pointer transition-all hover:scale-105 ${
+                            state.selectedTexture?.id === texture.id 
+                              ? 'ring-2 ring-accent bg-accent/10' 
+                              : 'hover:bg-muted/50'
+                          }`}
+                          onClick={() => handleSelectTexture(texture)}
+                        >
+                          <div className="aspect-square bg-muted rounded-lg overflow-hidden mb-2">
+                            <img
+                              src={texture.thumbnail}
+                              alt={texture.name}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <p className="text-sm font-medium text-center text-foreground">
+                            {texture.name}
+                          </p>
+                          {state.selectedTexture?.id === texture.id && (
+                            <div className="flex justify-center mt-2">
+                              <Check className="w-4 h-4 text-accent" />
+                            </div>
+                          )}
+                        </Card>
+                      ))}
+                    </div>
+                    
+                    <div className="mt-4 text-center">
+                      <Button
+                        className="btn-accent gap-2"
+                        onClick={() => {
+                          if (selectedProduct) {
+                            handleSelectProduct(selectedProduct);
+                          }
+                        }}
+                      >
+                        <Check className="w-4 h-4" />
+                        Apply Selected Texture
+                      </Button>
+                    </div>
+                  </div>
+                );
+              }
+              return null;
+            })()}
+          </div>
+        )}
 
         {filteredProducts.length === 0 && (
           <div className="text-center py-16">

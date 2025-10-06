@@ -11,6 +11,12 @@ import { ArrowLeft, Grid3X3 } from 'lucide-react';
 export function PreviewAndEdit() {
   const { state, dispatch } = useApp();
   const isMobile = useIsMobile();
+  const [exportFunction, setExportFunction] = React.useState<(() => Promise<Blob | null>) | null>(null);
+
+  // Debug: Log when exportFunction changes
+  React.useEffect(() => {
+    console.log('Export function updated:', typeof exportFunction, exportFunction);
+  }, [exportFunction]);
 
   const goBackToCatalog = () => {
     dispatch({ type: 'SET_STEP', payload: 'catalog' });
@@ -108,7 +114,10 @@ export function PreviewAndEdit() {
           <div className={`grid gap-6 ${isMobile ? 'grid-cols-1' : 'lg:grid-cols-3'}`}>
             {/* Main Preview Area */}
             <div className={`space-y-4 ${isMobile ? '' : 'lg:col-span-2'}`}>
-              <PreviewCanvas className="max-w-full min-h-[400px]" />
+              <PreviewCanvas 
+                className="max-w-full min-h-[500px]" 
+                onExportReady={setExportFunction}
+              />
               
               {/* Quick Info */}
               <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
@@ -138,7 +147,7 @@ export function PreviewAndEdit() {
             {!isMobile && (
               <div className="space-y-6">
                 <ControlsPanel />
-                <SceneManager />
+                <SceneManager exportFunction={exportFunction} />
               </div>
             )}
           </div>

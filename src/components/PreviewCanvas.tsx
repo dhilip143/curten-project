@@ -2,13 +2,15 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useApp } from '@/store/AppContext';
 import { WindowCoordinates } from '@/types';
 import { Blinds3D } from './Blinds3D';
+import { Palette } from 'lucide-react';
 
 interface PreviewCanvasProps {
   className?: string;
+  onExportReady?: (exportFn: () => Promise<Blob | null>) => void;
 }
 
-export function PreviewCanvas({ className = '' }: PreviewCanvasProps) {
-  const { state } = useApp();
+export function PreviewCanvas({ className = '', onExportReady }: PreviewCanvasProps) {
+  const { state, dispatch } = useApp();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });
 
@@ -144,7 +146,7 @@ export function PreviewCanvas({ className = '' }: PreviewCanvasProps) {
       // Calculate scale to fit within container while maintaining aspect ratio
       const scaleX = containerRect.width / originalWidth;
       const scaleY = containerRect.height / originalHeight;
-      const scale = Math.min(scaleX, scaleY, 1); // Don't scale up, only down if needed
+      const scale = Math.min(scaleX, scaleY, 1); // Allow scaling up to 120% for larger background image
       
       const width = originalWidth * scale;
       const height = originalHeight * scale;
@@ -171,14 +173,92 @@ export function PreviewCanvas({ className = '' }: PreviewCanvasProps) {
     renderCanvas();
   }, [renderCanvas, canvasSize]);
 
-  const exportImage = useCallback(() => {
+  // Create a simple function that doesn't execute immediately
+  const exportImage = (): Promise<Blob | null> => {
+    console.log('Export function called, is3D:', state.selectedProduct?.is3D);
+    
+    // For 3D models, we need to capture the WebGL canvas
+    if (state.selectedProduct?.is3D) {
+      // Find the WebGL canvas from the Blinds3D component
+      const webglCanvas = document.querySelector('canvas') as HTMLCanvasElement;
+      console.log('Found WebGL canvas:', webglCanvas);
+      console.log('Canvas dimensions:', webglCanvas?.width, 'x', webglCanvas?.height);
+      
+      if (webglCanvas) {
+        // Check if canvas has content by testing WebGL context
+        const gl = webglCanvas.getContext('webgl') || webglCanvas.getContext('webgl2');
+        console.log('WebGL context:', gl);
+        console.log('Canvas dimensions:', webglCanvas.width, 'x', webglCanvas.height);
+        
+        return new Promise<Blob | null>((resolve) => {
+          // Add a small delay to ensure rendering is complete
+          setTimeout(() => {
+            console.log('Capturing WebGL canvas after delay...');
+            
+            // Try to force a render by dispatching a resize event
+            window.dispatchEvent(new Event('resize'));
+            
+            // Wait a bit more for the render to complete
+            setTimeout(() => {
+              // First try the direct toBlob method
+              webglCanvas.toBlob((blob) => {
+                console.log('WebGL Canvas blob created:', blob?.size, 'bytes');
+                if (blob && blob.size > 0) {
+                  resolve(blob);
+                } else {
+                  console.log('Warning: Canvas blob is empty! Trying alternative method...');
+                  // Try alternative method - create a new canvas and copy
+                  const newCanvas = document.createElement('canvas');
+                  newCanvas.width = webglCanvas.width;
+                  newCanvas.height = webglCanvas.height;
+                  const newCtx = newCanvas.getContext('2d');
+                  if (newCtx) {
+                    newCtx.drawImage(webglCanvas, 0, 0);
+                    newCanvas.toBlob((newBlob) => {
+                      console.log('Alternative canvas blob created:', newBlob?.size, 'bytes');
+                      resolve(newBlob);
+                    }, 'image/png', 1.0);
+                  } else {
+                    console.log('Failed to create 2D context for alternative method');
+                    resolve(blob);
+                  }
+                }
+              }, 'image/png', 1.0);
+            }, 100);
+          }, 200); // Initial delay
+        });
+      }
+    }
+    
+    // For 2D canvas
     const canvas = canvasRef.current;
-    if (!canvas) return null;
+    console.log('Found 2D canvas:', canvas);
+    if (!canvas) return Promise.resolve(null);
 
     return new Promise<Blob | null>((resolve) => {
-      canvas.toBlob(resolve, 'image/png', 1.0);
+      canvas.toBlob((blob) => {
+        console.log('2D Canvas blob created:', blob?.size, 'bytes');
+        resolve(blob);
+      }, 'image/png', 1.0);
     });
-  }, []);
+  };
+
+  // Expose export function to parent component
+  useEffect(() => {
+    console.log('PreviewCanvas: onExportReady callback:', typeof onExportReady, onExportReady);
+    console.log('PreviewCanvas: exportImage:', typeof exportImage, exportImage);
+    if (onExportReady && exportImage) {
+      console.log('Calling onExportReady with exportImage function');
+      // Create a wrapper function to prevent immediate execution
+      const exportWrapper = () => {
+        console.log('Export wrapper called - calling actual export function');
+        return exportImage();
+      };
+      onExportReady(exportWrapper);
+    } else {
+      console.log('Not calling onExportReady - missing callback or exportImage is not available');
+    }
+  }, [onExportReady]);
 
   if (!state.photo.url || !state.windowCoords || !state.selectedProduct) {
     return (
@@ -198,11 +278,54 @@ export function PreviewCanvas({ className = '' }: PreviewCanvasProps) {
           texture={state.selectedProduct.texture}
           modelUrl={state.selectedProduct.modelUrl}
           backgroundImage={state.photo.url}
+          selectedTexture={state.selectedTexture}
           className="w-full h-full"
         />
         <div className="absolute top-4 left-4 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
           3D Preview
         </div>
+        
+        {/* Texture Selection Controls - Only show for plain blinds */}
+        {state.selectedProduct.textureOptions && 
+         state.selectedProduct.textureOptions.length > 0 && 
+         state.selectedProduct.modelUrl && 
+         state.selectedProduct.modelUrl.includes('plain_blinds.glb') && (
+          <div className="absolute bottom-4 left-4 right-4 bg-black/70 backdrop-blur-sm rounded-lg p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Palette className="w-4 h-4 text-white" />
+              <h4 className="text-white font-medium text-sm">Choose Texture</h4>
+            </div>
+            
+            <div className="flex gap-2 overflow-x-auto">
+              {state.selectedProduct.textureOptions.map((texture) => (
+                <button
+                  key={texture.id}
+                  className={`flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden border-2 transition-all ${
+                    state.selectedTexture?.id === texture.id 
+                      ? 'border-accent ring-2 ring-accent/50' 
+                      : 'border-white/30 hover:border-white/60'
+                  }`}
+                  onClick={() => {
+                    console.log('Texture button clicked:', texture.name, texture.id);
+                    dispatch({ type: 'SET_SELECTED_TEXTURE', payload: texture });
+                  }}
+                >
+                  <img
+                    src={texture.thumbnail}
+                    alt={texture.name}
+                    className="w-full h-full object-cover"
+                  />
+                </button>
+              ))}
+            </div>
+            
+            {state.selectedTexture && (
+              <p className="text-white/80 text-xs mt-2">
+                Selected: {state.selectedTexture.name}
+              </p>
+            )}
+          </div>
+        )}
       </div>
     );
   }

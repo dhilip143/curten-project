@@ -4,7 +4,10 @@ import { AppState, AppAction, SceneTransforms } from '@/types';
 const initialTransforms: SceneTransforms = {
   opacity: 0.9,
   scale: 1,
+  verticalScale: 1,
+  horizontalScale: 1,
   verticalOffset: 0,
+  horizontalOffset: 0,
   rotation: 0,
   isOpen: true,
 };
@@ -26,6 +29,8 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return { ...state, windowCoords: action.payload };
     case 'SET_SELECTED_PRODUCT':
       return { ...state, selectedProduct: action.payload };
+    case 'SET_SELECTED_TEXTURE':
+      return { ...state, selectedTexture: action.payload };
     case 'UPDATE_TRANSFORMS':
       return {
         ...state,
